@@ -1,0 +1,47 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Root>
+	<CM_Monitor>
+		<Environments>
+			<Environment name="DEV">
+				<WorkgroupServers>
+					<Workgroup name="WGS1" prop="x" Installdir="" Logpath="">
+						<Services>
+							<service name="WGS" prop="TRIMWorkgroup"></service>
+							<service name="IDOL" prop="MicroFocus-IDOLServer"></service>
+							<service name="IDOLContent" prop="MicroFocus-CFS"></service>
+							<service name="ServiceAPIBulk" prop="TRIMServiceAPIBulkLoader"></service>
+							<service name="OnstreamDataprovider" prop=""></service>
+							<service name="EmailLinkService" prop=""></service>
+						</Services>
+						<LogPaths>
+							<Path name="WGSLogs" path="C:\Micro Focus Content Manager\ServerLocalData\TRIM\Log" lastupdated=""></Path>
+							<Path name="WebClientLogs" path="C:\Micro Focus Content Manager\WebClientWorkpath\Logs" lastupdated=""></Path>
+							<Path name="ServiceAPILogs" path="C:\Micro Focus Content Manager\ServiceAPIWorkpath\logs" lastupdated=""></Path>
+							<Path name="WebDrawerLogs" path="C:\Micro Focus Content Manager\WebDrawerWorkpath\logs" lastupdated=""></Path>
+							<Path name="LDAPLogs" path="C:\Micro Focus Content Manager\" lastupdated=""></Path>
+						</LogPaths>
+					</Workgroup>					
+				</WorkgroupServers>
+				<Datasets>
+					<Dataset name="EE" id="TS">
+						<DbConnection servername="" creds=""></DbConnection>
+						<urls websitename="">
+							<url name="CMWeb" path="http://localhost/ContentManager"></url>
+							<url name="CMServiceAPI" path="http://localhost/CMServiceAPI"></url>
+							<url name="CMWebDrawer" path="http://localhost/CMWebDrawer"></url>
+						</urls>
+					</Dataset>
+				</Datasets>
+			</Environment>			
+		</Environments>
+		<WindowsEvent>
+			<Services name="Trim" lastupdated=""></Services>
+			<Services name="Trim Event" lastupdated=""></Services>
+		</WindowsEvent>
+		<EmailSetup From="" Subject="" SmtpServer="" SmtpPort="" Enabled="False">
+			<Recipients To="msheikh2@opentext.com"></Recipients>
+			<Recipients To="skv2@opentext.com"></Recipients>
+			<Recipients To="rsaha2@opentext.com"></Recipients>
+		</EmailSetup>
+	</CM_Monitor>
+</Root>
