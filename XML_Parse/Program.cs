@@ -153,8 +153,7 @@ namespace XML_Parse
                         EventViewerLog("Application", servicesnode.GetAttribute("name"), lastupdated);
                     }
                 }
-                msgBuilder.Length--;
-                msgBuilder.Length--;
+                msgBuilder.Length = msgBuilder.Length - 4;
                 msgBuilder.Append("</body></table>");
                 foreach (XmlElement emailNode in root.SelectNodes("CM_Monitor/EmailSetup"))
                 {
@@ -257,7 +256,7 @@ namespace XML_Parse
             }
             if (status == 0)
             {
-                msgBuilder.Replace("statuscolor","MediumSeaGreen");
+                msgBuilder.Replace("statuscolor", "MediumSeaGreen");
             }
             else
             {
@@ -330,7 +329,7 @@ namespace XML_Parse
                             {
                                 if (dt.Rows[i][2].ToString() == entry.ErrorMessage.Trim())
                                 {
-                                    DateTime first = DateTime.ParseExact(dt.Rows[i][0].ToString(), "dd-MM-yyyy HH:mm:ss.fff", CultureInfo.InvariantCulture);
+                                    DateTime first = DateTime.ParseExact(dt.Rows[i][0] + "", "dd-MM-yyyy HH:mm:ss.fff", CultureInfo.InvariantCulture);
                                     if (first > entry.Timestamp)
                                     {
                                         dt.Rows[i][0] = entry.Timestamp.ToString("dd-MM-yyyy HH:mm:ss.fff");
@@ -339,7 +338,7 @@ namespace XML_Parse
                                     {
                                         dt.Rows[i][1] = entry.Timestamp.ToString("dd-MM-yyyy HH:mm:ss.fff");
                                     }
-                                    int count = int.Parse(dt.Rows[i][3].ToString());
+                                    int count = int.Parse(dt.Rows[i][3] + "");
                                     dt.Rows[i][3] = count + 1;
                                     flag = 1;
                                     break;
@@ -428,7 +427,7 @@ namespace XML_Parse
                             {
                                 if (dt.Rows[i][2].ToString() == entry.ErrorMessage.Trim())
                                 {
-                                    DateTime first = DateTime.ParseExact(dt.Rows[i][0].ToString(), "dd-MM-yyyy HH:mm:ss.fff", CultureInfo.InvariantCulture);
+                                    DateTime first = DateTime.ParseExact(dt.Rows[i][0] + "", "dd-MM-yyyy HH:mm:ss.fff", CultureInfo.InvariantCulture);
                                     if (first > entry.Timestamp)
                                     {
                                         dt.Rows[i][0] = entry.Timestamp.ToString("dd-MM-yyyy HH:mm:ss.fff");
@@ -437,7 +436,7 @@ namespace XML_Parse
                                     {
                                         dt.Rows[i][1] = entry.Timestamp.ToString("dd-MM-yyyy HH:mm:ss.fff");
                                     }
-                                    int count = int.Parse(dt.Rows[i][3].ToString());
+                                    int count = int.Parse(dt.Rows[i][3] + "");
                                     dt.Rows[i][3] = count + 1;
                                     flag = 1;
                                     break;
@@ -478,7 +477,7 @@ namespace XML_Parse
                     if (entry.Source.Equals(sourceName, StringComparison.OrdinalIgnoreCase) && entry.EntryType == EventLogEntryType.Error && entry.TimeGenerated >= lastdate)
                     {
                         log.Info($"Event ID : " + entry.InstanceId + "\t Entry Type: " + entry.EntryType + "\t Source : " + entry.Source + "\t Message: " + entry.Message.Replace("\r\n", " : ") + "\t Time Generated: " + entry.TimeGenerated);
-                        String[] row = { entry.TimeGenerated.ToString("dd-MM-yyyy HH:mm:ss.fff"), "Event Viewer", "", entry.Source, entry.InstanceId.ToString(), entry.EntryType.ToString(), entry.Message.Replace("\r\n", " : ") };
+                        String[] row = { entry.TimeGenerated.ToString("dd-MM-yyyy HH:mm:ss.fff"), "Event Viewer", "", entry.Source, entry.InstanceId + "", entry.EntryType + "", entry.Message.Replace("\r\n", " : ") };
                         lock (rowsLock)
                         {
                             rows.Add(row);
@@ -490,7 +489,7 @@ namespace XML_Parse
                             {
                                 if (dt.Rows[i][2].ToString() == entry.Message.Replace("\r\n", " : "))
                                 {
-                                    DateTime first = DateTime.ParseExact(dt.Rows[i][0].ToString(), "dd-MM-yyyy HH:mm:ss.fff", CultureInfo.InvariantCulture);
+                                    DateTime first = DateTime.ParseExact(dt.Rows[i][0] + "", "dd-MM-yyyy HH:mm:ss.fff", CultureInfo.InvariantCulture);
                                     if (first > entry.TimeGenerated)
                                     {
                                         dt.Rows[i][0] = entry.TimeGenerated.ToString("dd-MM-yyyy HH:mm:ss.fff");
@@ -499,7 +498,7 @@ namespace XML_Parse
                                     {
                                         dt.Rows[i][1] = entry.TimeGenerated.ToString("dd-MM-yyyy HH:mm:ss.fff");
                                     }
-                                    int count = int.Parse(dt.Rows[i][3].ToString());
+                                    int count = int.Parse(dt.Rows[i][3] + "");
                                     dt.Rows[i][3] = count + 1;
                                     flag = 1;
                                     break;
@@ -513,7 +512,7 @@ namespace XML_Parse
                     }
                 });
                 String color = rows.Count == 0 ? "MediumSeaGreen" : "Salmon";
-                msgBuilder.Append("<td></td><td></td><td>Event Viewer Logs</td><td>" + sourceName + "</td><td>Windows Event Logs</td><td bgcolor=\"" + color + "\">" + rows.Count + " Errors Found, " + lastdate + "</td></tr><tr>");
+                msgBuilder.Append("<td></td><td></td><td>Event Viewer Logs</td><td>" + sourceName + "</td><td>Windows Event Logs</td><td bgcolor=\"" + color + "\">" + rows.Count + " Errors Found, " + lastdate.ToString("dd-MM-yyyy HH:mm:ss.fff") + "</td></tr><tr>");
                 XDocument xmlDoc = XDocument.Load("CM_Monitor.xml");
                 var target = xmlDoc.Elements("Root").Elements("CM_Monitor").Elements("WindowsEvent").Elements("Services").Where(e => e.Attribute("name").Value == sourceName).Single();
                 target.Attribute("lastupdated").Value = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss,fff");
@@ -693,7 +692,7 @@ namespace XML_Parse
                 mail.Attachments.Add(new Attachment("Logs\\Errorlog-" + DateTime.Now.ToString("ddMMyyyy") + ".csv"));
                 mail.Attachments.Add(new Attachment("Logs\\Detaliedlog-" + DateTime.Now.ToString("ddMMyyyy") + ".csv"));
                 SmtpClient smtpClient = new SmtpClient(SmtpServer, SmtpPort);
-                smtpClient.EnableSsl = true;
+                smtpClient.EnableSsl = false;
                 smtpClient.Send(mail);
             }
             catch (Exception ex)
