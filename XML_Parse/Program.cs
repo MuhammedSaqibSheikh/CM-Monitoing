@@ -37,10 +37,10 @@ namespace XML_Parse
         static void Main(String[] args)
         {
             try
-            {
-                GetDriveDetails();
+            {                
                 msgBuilder.Append("<style>#security {width: 100%;border-radius:10px;border-spacing: 0;font-family:'Trebuchet MS', sans-serif;}#security td, #security th {border: 1px solid #ddd;padding: 10px;}#security tr:nth-child(even){background-color: #f2f2f2;}#security th {padding-top: 12px;padding-bottom: 12px;text-align: center;background-color: #5F9EA0;color: white;}</style><body style=\"font-family:'Trebuchet MS', sans-serif;\">");
                 msgBuilder.Append("Dear Admin,</br>Below is the summary of Content Manager Monitoring Tool on " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " </br></br>");
+                //GetCpuDetails();
                 msgBuilder.Append("<table id='security' border='2'><tr><th>Environment</th><th>Servers</th><th>Services</th><th>CM Components</th><th>Monitoring Components</th><th>Status</th>");
                 XmlDocument xmlDoc = new XmlDocument();
                 xmlDoc.Load("CM_Monitor.xml");
@@ -686,33 +686,34 @@ namespace XML_Parse
         {
             DriveInfo[] drives = DriveInfo.GetDrives();
             foreach (DriveInfo drive in drives)
-            {
-                log.Info("Drive Name: " + drive.Name);
+            {                
                 if (drive.IsReady)
                 {
+                    log.Info("Drive Name: " + drive.Name);
                     log.Info("Volume Label: " + drive.VolumeLabel);
                     log.Info("Total Size: " + ((float)drive.TotalSize / (1024 * 1024 * 1024)).ToString("0.##") + " GB");
-                    log.Info("Available Free Space: " + ((float)drive.AvailableFreeSpace / (1024 * 1024 * 1024)).ToString("0.##") + " GB");
-                }
-                else
-                {
-                    log.Info("Drive is not ready.");
+                    log.Info("Used Size: " + (((float)drive.TotalSize / (1024 * 1024 * 1024)) - ((float)drive.AvailableFreeSpace / (1024 * 1024 * 1024))).ToString("0.##") + " GB");
+                    log.Info("Available Size: " + ((float)drive.AvailableFreeSpace / (1024 * 1024 * 1024)).ToString("0.##") + " GB");
+                    msgBuilder.AppendLine("<tr><td>" + drive.VolumeLabel + " - " + drive.Name + "</td><td>Size : " + ((float)drive.TotalSize / (1024 * 1024 * 1024)).ToString("0.##") + " GB</td><td>Size : " + (((float)drive.TotalSize / (1024 * 1024 * 1024)) - ((float)drive.AvailableFreeSpace / (1024 * 1024 * 1024))).ToString("0.##") + " GB</td><td>Size : " + ((float)drive.AvailableFreeSpace / (1024 * 1024 * 1024)).ToString("0.##") + " GB</td></tr>");
                 }
             }
-            GetCpuDetails();
+            msgBuilder.AppendLine("</table></br></br>");
         }
 
         static public void GetCpuDetails()
-        {
+        {            
             log.Info("CPU Details:");
             PerformanceCounter cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
             PerformanceCounter ramCounter = new PerformanceCounter("Memory", "Available MBytes");
             cpuCounter.NextValue();
             Thread.Sleep(1000);
-            log.Info("CPU Usage: " + cpuCounter.NextValue() + "%");
+            log.Info("CPU Usage: " + cpuCounter.NextValue() + "%");            
             log.Info("Available Memory: " + ramCounter.NextValue() + " MB");
             log.Info("Used Memory: " + (GetTotalMemoryInMB() - ramCounter.NextValue()) + " MB");
             log.Info("Total Memory: " + GetTotalMemoryInMB() + " MB");
+            msgBuilder.Append("<table id='security' border='2'><tr><th>CPU/Drives</th><th>Total</th><th>Used</th><th>Available</th></tr>");
+            msgBuilder.Append("<tr><td>Utilization - " + cpuCounter.NextValue() + "%</td><td>RAM : " + GetTotalMemoryInMB() + " MB</td><td>RAM : " + (GetTotalMemoryInMB() - ramCounter.NextValue()) + " MB</td><td>RAM : " + ramCounter.NextValue() + " MB</td></tr>");
+            GetDriveDetails();
         }
 
         static ulong GetTotalMemoryInMB()
