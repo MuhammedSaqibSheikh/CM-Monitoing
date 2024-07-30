@@ -15,6 +15,8 @@ using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using System.Xml;
 using System.Xml.Linq;
+using System.Management;
+using System.Threading;
 
 namespace XML_Parse
 {
@@ -36,8 +38,7 @@ namespace XML_Parse
         {
             try
             {
-                int wgscount = 0;
-                int dscount = 0;
+                GetDriveDetails();
                 msgBuilder.Append("<style>#security {width: 100%;border-radius:10px;border-spacing: 0;font-family:'Trebuchet MS', sans-serif;}#security td, #security th {border: 1px solid #ddd;padding: 10px;}#security tr:nth-child(even){background-color: #f2f2f2;}#security th {padding-top: 12px;padding-bottom: 12px;text-align: center;background-color: #5F9EA0;color: white;}</style><body style=\"font-family:'Trebuchet MS', sans-serif;\">");
                 msgBuilder.Append("Dear Admin,</br>Below is the summary of Content Manager Monitoring Tool on " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " </br></br>");
                 msgBuilder.Append("<table id='security' border='2'><tr><th>Environment</th><th>Servers</th><th>Services</th><th>CM Components</th><th>Monitoring Components</th><th>Status</th>");
@@ -46,6 +47,8 @@ namespace XML_Parse
                 XmlElement root = xmlDoc.DocumentElement;
                 foreach (XmlElement environmentNode in root.SelectNodes("CM_Monitor/Environments/Environment"))
                 {
+                    int wgscount = 0;
+                    int dscount = 0;
                     msgBuilder.Append("<tr><td rowspan=\"EnviCount\">" + environmentNode.GetAttribute("name") + "</td>");
                     log.Info($"Environment: {environmentNode.GetAttribute("name")}");
                     foreach (XmlElement workgroupNode in environmentNode.SelectNodes("WorkgroupServers/Workgroup"))
@@ -679,16 +682,57 @@ namespace XML_Parse
             }
         }
 
+        static public void GetDriveDetails()
+        {
+            DriveInfo[] drives = DriveInfo.GetDrives();
+            foreach (DriveInfo drive in drives)
+            {
+                log.Info("Drive Name: " + drive.Name);
+                if (drive.IsReady)
+                {
+                    log.Info("Volume Label: " + drive.VolumeLabel);
+                    log.Info("Total Size: " + ((float)drive.TotalSize / (1024 * 1024 * 1024)).ToString("0.##") + " GB");
+                    log.Info("Available Free Space: " + ((float)drive.AvailableFreeSpace / (1024 * 1024 * 1024)).ToString("0.##") + " GB");
+                }
+                else
+                {
+                    log.Info("Drive is not ready.");
+                }
+            }
+            GetCpuDetails();
+        }
+
+        static public void GetCpuDetails()
+        {
+            log.Info("CPU Details:");
+            PerformanceCounter cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
+            PerformanceCounter ramCounter = new PerformanceCounter("Memory", "Available MBytes");
+            cpuCounter.NextValue();
+            Thread.Sleep(1000);
+            log.Info("CPU Usage: " + cpuCounter.NextValue() + "%");
+            log.Info("Available Memory: " + ramCounter.NextValue() + " MB");
+            log.Info("Used Memory: " + (GetTotalMemoryInMB() - ramCounter.NextValue()) + " MB");
+            log.Info("Total Memory: " + GetTotalMemoryInMB() + " MB");
+        }
+
+        static ulong GetTotalMemoryInMB()
+        {
+            using (var mos = new ManagementObjectSearcher("SELECT TotalPhysicalMemory FROM Win32_ComputerSystem"))
+            {
+                foreach (var mo in mos.Get())
+                {
+                    return Convert.ToUInt64(mo["TotalPhysicalMemory"]) / (1024 * 1024);
+                }
+            }
+            return 0;
+        }
+
         static public void SendMail(String From, String To, String Subject, String SmtpServer, int SmtpPort)
         {
             try
             {
-                MailMessage mail = new MailMessage();
-                mail.From = new MailAddress(From);
-                mail.To.Add(To);
-                mail.Subject = Subject;
+                MailMessage mail = new MailMessage(From, To, Subject, msgBuilder.ToString());
                 mail.IsBodyHtml = true;
-                mail.Body = msgBuilder.ToString();
                 mail.Attachments.Add(new Attachment("Logs\\Errorlog-" + DateTime.Now.ToString("ddMMyyyy") + ".csv"));
                 mail.Attachments.Add(new Attachment("Logs\\Detaliedlog-" + DateTime.Now.ToString("ddMMyyyy") + ".csv"));
                 SmtpClient smtpClient = new SmtpClient(SmtpServer, SmtpPort);
