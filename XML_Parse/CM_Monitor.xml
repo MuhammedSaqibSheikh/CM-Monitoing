@@ -6,12 +6,12 @@
 				<WorkgroupServers>
 					<Workgroup name="WGS1" prop="x" Installdir="" Logpath="">
 						<Services>
-							<service name="WGS" prop="TRIMWorkgroup"></service>
-							<service name="IDOL" prop="MicroFocus-IDOLServer"></service>
-							<service name="IDOLContent" prop="MicroFocus-CFS"></service>
-							<service name="ServiceAPIBulk" prop="TRIMServiceAPIBulkLoader"></service>
-							<service name="OnstreamDataprovider" prop=""></service>
-							<service name="EmailLinkService" prop=""></service>
+							<service name="WGS" prop="TRIMWorkgroup" Server="" Username="" Password=""></service>
+							<service name="IDOL" prop="TRIMIDOLService" Server="10.52.90.27" Username="ZL7oC6+qAgImdNoxNLNYKAMvcJI1JGo9" Password="uBx/ir/VHPgwAW4bNhKkYQ=="></service>
+							<service name="IDOLContent" prop="TRIMIDOLContent" Server="10.52.90.27" Username="ZL7oC6+qAgImdNoxNLNYKAMvcJI1JGo9" Password="uBx/ir/VHPgwAW4bNhKkYQ=="></service>
+							<service name="ServiceAPIBulk" prop="TRIMServiceAPIBulkLoader" Server="" Username="" Password=""></service>
+							<service name="OnstreamDataprovider" prop="" Server="" Username="" Password=""></service>
+							<service name="EmailLinkService" prop="" Server="" Username="" Password=""></service>
 						</Services>
 						<LogPaths>
 							<Path name="WGSLogs" path="C:\Micro Focus Content Manager\ServerLocalData\TRIM\Log" lastupdated=""></Path>

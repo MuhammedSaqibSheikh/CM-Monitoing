@@ -17,6 +17,8 @@ using System.Xml;
 using System.Xml.Linq;
 using System.Management;
 using System.Threading;
+using System.Configuration;
+using System.Security.Cryptography;
 
 namespace XML_Parse
 {
@@ -37,7 +39,7 @@ namespace XML_Parse
         static void Main(String[] args)
         {
             try
-            {                
+            {
                 msgBuilder.Append("<style>#security {width: 100%;border-radius:10px;border-spacing: 0;font-family:'Trebuchet MS', sans-serif;}#security td, #security th {border: 1px solid #ddd;padding: 10px;}#security tr:nth-child(even){background-color: #f2f2f2;}#security th {padding-top: 12px;padding-bottom: 12px;text-align: center;background-color: #5F9EA0;color: white;}</style><body style=\"font-family:'Trebuchet MS', sans-serif;\">");
                 msgBuilder.Append("Dear Admin,</br>Below is the summary of Content Manager Monitoring Tool on " + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss") + " </br></br>");
                 //GetCpuDetails();
@@ -60,27 +62,69 @@ namespace XML_Parse
                         {
                             if (serviceNode.GetAttribute("name") == "WGS" && serviceNode.GetAttribute("prop") != "")
                             {
-                                CheckService(serviceNode.GetAttribute("prop"), "WGS");
+                                if (serviceNode.GetAttribute("Server") == "" && serviceNode.GetAttribute("Username") == "" && serviceNode.GetAttribute("Password") == "")
+                                {
+                                    CheckService(serviceNode.GetAttribute("prop"), "WGS");
+                                }
+                                else
+                                {
+                                    CheckService(serviceNode.GetAttribute("Server"), serviceNode.GetAttribute("Username"), serviceNode.GetAttribute("Password"), serviceNode.GetAttribute("prop"), "WGS");
+                                }
                             }
                             else if (serviceNode.GetAttribute("name") == "IDOL" && serviceNode.GetAttribute("prop") != "")
                             {
-                                CheckService(serviceNode.GetAttribute("prop"), "IDOL");
+                                if (serviceNode.GetAttribute("Server") == "" && serviceNode.GetAttribute("Username") == "" && serviceNode.GetAttribute("Password") == "")
+                                {
+                                    CheckService(serviceNode.GetAttribute("prop"), "IDOL");
+                                }
+                                else
+                                {
+                                    CheckService(serviceNode.GetAttribute("Server"), serviceNode.GetAttribute("Username"), serviceNode.GetAttribute("Password"), serviceNode.GetAttribute("prop"), "IDOL");
+                                }
                             }
                             else if (serviceNode.GetAttribute("name") == "IDOLContent" && serviceNode.GetAttribute("prop") != "")
                             {
-                                CheckService(serviceNode.GetAttribute("prop"), "IDOL Content");
+                                if (serviceNode.GetAttribute("Server") == "" && serviceNode.GetAttribute("Username") == "" && serviceNode.GetAttribute("Password") == "")
+                                {
+                                    CheckService(serviceNode.GetAttribute("prop"), "IDOL Content");
+                                }
+                                else
+                                {
+                                    CheckService(serviceNode.GetAttribute("Server"), serviceNode.GetAttribute("Username"), serviceNode.GetAttribute("Password"), serviceNode.GetAttribute("prop"), "IDOL Content");
+                                }
                             }
                             else if (serviceNode.GetAttribute("name") == "ServiceAPIBulk" && serviceNode.GetAttribute("prop") != "")
                             {
-                                CheckService(serviceNode.GetAttribute("prop"), "Service API Bulk");
+                                if (serviceNode.GetAttribute("Server") == "" && serviceNode.GetAttribute("Username") == "" && serviceNode.GetAttribute("Password") == "")
+                                {
+                                    CheckService(serviceNode.GetAttribute("prop"), "Service API Bulk");
+                                }
+                                else
+                                {
+                                    CheckService(serviceNode.GetAttribute("Server"), serviceNode.GetAttribute("Username"), serviceNode.GetAttribute("Password"), serviceNode.GetAttribute("prop"), "Service API Bulk");
+                                }
                             }
                             else if (serviceNode.GetAttribute("name") == "OnstreamDataprovider" && serviceNode.GetAttribute("prop") != "")
                             {
-                                CheckService(serviceNode.GetAttribute("prop"), "OnStream Data Provider");
+                                if (serviceNode.GetAttribute("Server") == "" && serviceNode.GetAttribute("Username") == "" && serviceNode.GetAttribute("Password") == "")
+                                {
+                                    CheckService(serviceNode.GetAttribute("prop"), "Onstream Data Provider");
+                                }
+                                else
+                                {
+                                    CheckService(serviceNode.GetAttribute("Server"), serviceNode.GetAttribute("Username"), serviceNode.GetAttribute("Password"), serviceNode.GetAttribute("prop"), "Onstream Data Provider");
+                                }
                             }
                             else if (serviceNode.GetAttribute("name") == "EmailLinkService" && serviceNode.GetAttribute("prop") != "")
                             {
-                                CheckService(serviceNode.GetAttribute("prop"), "Email Link");
+                                if (serviceNode.GetAttribute("Server") == "" && serviceNode.GetAttribute("Username") == "" && serviceNode.GetAttribute("Password") == "")
+                                {
+                                    CheckService(serviceNode.GetAttribute("prop"), "Email Link");
+                                }
+                                else
+                                {
+                                    CheckService(serviceNode.GetAttribute("Server"), serviceNode.GetAttribute("Username"), serviceNode.GetAttribute("Password"), serviceNode.GetAttribute("prop"), "Email Link");
+                                }
                             }
                             else
                             {
@@ -201,6 +245,35 @@ namespace XML_Parse
             }
         }
 
+        static public void CheckService(String Server, String Username, String Password, String ServiceName, String Service)
+        {
+            ConnectionOptions options = new ConnectionOptions
+            {
+                Username = Decrypt(Username, false),
+                Password = Decrypt(Password, false),
+                Impersonation = ImpersonationLevel.Impersonate,
+                EnablePrivileges = true
+            };
+            ManagementScope scope = new ManagementScope($"\\\\{Server}\\root\\cimv2", options);
+            try
+            {
+                scope.Connect();
+                ObjectQuery query = new ObjectQuery("SELECT * FROM Win32_Service where Name='" + ServiceName + "'");
+                ManagementObjectSearcher searcher = new ManagementObjectSearcher(scope, query);
+                ManagementObjectCollection services = searcher.Get();
+                foreach (ManagementObject service in services)
+                {
+                    log.Info($"   CM " + Service + " Service '" + ServiceName + "' is " + service["State"]);
+                    String color = service["State"].ToString() != "Running" ? "Salmon" : "MediumSeaGreen";
+                    msgBuilder.Append("<td>CM " + Service + "</td><td>" + ServiceName + "</td><td bgcolor=\"" + color + "\">" + service["State"] + "</td></tr><tr>");
+                }
+            }
+            catch (Exception ex)
+            {
+                log.Error(ex);
+            }
+        }
+
         static public void CheckWebClient(String URL, String Service)
         {
             int status = 0;
@@ -230,7 +303,7 @@ namespace XML_Parse
             {
                 TimeSpan timeSpan = Convert.ToDateTime(cert2.GetExpirationDateString()) - DateTime.Now;
                 Console.WriteLine("SSL Certificate is valid till : " + cert2.GetExpirationDateString() + " for " + URL + " " + timeSpan.Days + " Days Remaining");
-                msgBuilder.Append("<td>" + Service + "</td><td>" + URL + "</td><td>" + Service + "</td><td bgcolor=\"statuscolor\">SSL Certificate is valid till : " + cert2.GetExpirationDateString() + "</td><td>" + timeSpan.Days + " Days Remaining, ");
+                msgBuilder.Append("<td>" + Service + "</td><td>" + URL + "</td><td>" + Service + "</td><td bgcolor=\"statuscolor\">SSL Certificate is valid till : " + cert2.GetExpirationDateString() + ", " + timeSpan.Days + " Days Remaining, ");
             }
 
             try
@@ -686,33 +759,43 @@ namespace XML_Parse
         {
             DriveInfo[] drives = DriveInfo.GetDrives();
             foreach (DriveInfo drive in drives)
-            {                
+            {
                 if (drive.IsReady)
                 {
+                    decimal total = (decimal)drive.TotalSize / (1024 * 1024 * 1024);
+                    decimal avalable = (decimal)drive.AvailableFreeSpace / (1024 * 1024 * 1024);
+                    decimal used = total - avalable;
                     log.Info("Drive Name: " + drive.Name);
                     log.Info("Volume Label: " + drive.VolumeLabel);
-                    log.Info("Total Size: " + ((float)drive.TotalSize / (1024 * 1024 * 1024)).ToString("0.##") + " GB");
-                    log.Info("Used Size: " + (((float)drive.TotalSize / (1024 * 1024 * 1024)) - ((float)drive.AvailableFreeSpace / (1024 * 1024 * 1024))).ToString("0.##") + " GB");
-                    log.Info("Available Size: " + ((float)drive.AvailableFreeSpace / (1024 * 1024 * 1024)).ToString("0.##") + " GB");
-                    msgBuilder.AppendLine("<tr><td>" + drive.VolumeLabel + " - " + drive.Name + "</td><td>Size : " + ((float)drive.TotalSize / (1024 * 1024 * 1024)).ToString("0.##") + " GB</td><td>Size : " + (((float)drive.TotalSize / (1024 * 1024 * 1024)) - ((float)drive.AvailableFreeSpace / (1024 * 1024 * 1024))).ToString("0.##") + " GB</td><td>Size : " + ((float)drive.AvailableFreeSpace / (1024 * 1024 * 1024)).ToString("0.##") + " GB</td></tr>");
+                    log.Info("Total Size: " + total.ToString("0.##") + " GB");
+                    log.Info("Used Size: " + used.ToString("0.##") + " GB - " + ((used * 100) / total).ToString("0.##") + "%");
+                    log.Info("Available Size: " + avalable.ToString("0.##") + " GB - " + ((avalable * 100) / total).ToString("0.##") + "%");
+                    msgBuilder.AppendLine("<tr><td>" + drive.VolumeLabel + " - " + drive.Name + "</td><td>Size : " + total.ToString("0.##") + " GB</td><td>Size : " + used.ToString("0.##") + " GB - " + ((used * 100) / total).ToString("0.##") + "%</td><td>Size : " + avalable.ToString("0.##") + " GB - " + ((avalable * 100) / total).ToString("0.##") + "%</td></tr>");
                 }
             }
             msgBuilder.AppendLine("</table></br></br>");
         }
 
         static public void GetCpuDetails()
-        {            
+        {
             log.Info("CPU Details:");
+            decimal clockspeed = 0;
             PerformanceCounter cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
             PerformanceCounter ramCounter = new PerformanceCounter("Memory", "Available MBytes");
             cpuCounter.NextValue();
             Thread.Sleep(1000);
-            log.Info("CPU Usage: " + cpuCounter.NextValue() + "%");            
+            log.Info("CPU Usage: " + cpuCounter.NextValue().ToString("0") + "%");
+            ManagementObjectSearcher mos = new ManagementObjectSearcher("select CurrentClockSpeed from Win32_Processor");
+            foreach (ManagementObject mo in mos.Get())
+            {
+                clockspeed = Convert.ToDecimal(mo["CurrentClockSpeed"]) / 1000;
+                log.Info("Current Clock Speed: " + clockspeed.ToString("0.##") + " GHz");
+            }
             log.Info("Available Memory: " + ramCounter.NextValue() + " MB");
             log.Info("Used Memory: " + (GetTotalMemoryInMB() - ramCounter.NextValue()) + " MB");
             log.Info("Total Memory: " + GetTotalMemoryInMB() + " MB");
             msgBuilder.Append("<table id='security' border='2'><tr><th>CPU/Drives</th><th>Total</th><th>Used</th><th>Available</th></tr>");
-            msgBuilder.Append("<tr><td>Utilization - " + cpuCounter.NextValue() + "%</td><td>RAM : " + GetTotalMemoryInMB() + " MB</td><td>RAM : " + (GetTotalMemoryInMB() - ramCounter.NextValue()) + " MB</td><td>RAM : " + ramCounter.NextValue() + " MB</td></tr>");
+            msgBuilder.Append("<tr><td>Utilization - " + cpuCounter.NextValue().ToString("0") + "% - " + clockspeed.ToString("0.##") + " GHz</td><td>RAM : " + GetTotalMemoryInMB() + " MB</td><td>RAM : " + (GetTotalMemoryInMB() - ramCounter.NextValue()) + " MB</td><td>RAM : " + ramCounter.NextValue() + " MB</td></tr>");
             GetDriveDetails();
         }
 
@@ -765,6 +848,32 @@ namespace XML_Parse
                     log.Error($"Error deleting file " + file + ": " + ex);
                 }
             }
+        }
+
+        static public string Decrypt(string cipherString, bool useHashing)
+        {
+            byte[] keyArray;
+            byte[] toEncryptArray = Convert.FromBase64String(cipherString);
+            AppSettingsReader settingsReader = new AppSettingsReader();
+            string key = "WETHEPEOPLEOFINDIAHAVING";
+            if (useHashing)
+            {
+                MD5CryptoServiceProvider hashmd5 = new MD5CryptoServiceProvider();
+                keyArray = hashmd5.ComputeHash(UTF8Encoding.UTF8.GetBytes(key));
+                hashmd5.Clear();
+            }
+            else
+            {
+                keyArray = UTF8Encoding.UTF8.GetBytes(key);
+            }
+            TripleDESCryptoServiceProvider tdes = new TripleDESCryptoServiceProvider();
+            tdes.Key = keyArray;
+            tdes.Mode = CipherMode.ECB;
+            tdes.Padding = PaddingMode.PKCS7;
+            ICryptoTransform cTransform = tdes.CreateDecryptor();
+            byte[] resultArray = cTransform.TransformFinalBlock(toEncryptArray, 0, toEncryptArray.Length);
+            tdes.Clear();
+            return UTF8Encoding.UTF8.GetString(resultArray);
         }
     }
 }
